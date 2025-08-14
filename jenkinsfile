@@ -11,32 +11,31 @@ pipeline {
             }
             steps {
                 sh '''
-                    # Fix permissions so node user can write
-                    chown -R node:node $PWD
-                    npm ci --unsafe-perm
+                    ls -la
+                    node --version
+                    npm --version
+                    npm ci
                     npm run build
-                    ls -la build
+                    ls -la
                 '''
             }
         }
-
-        stage('Test') {
+        stage('Test'){
             agent {
                 docker {
                     image 'node:18-alpine'
                     reuseNode true
                 }
             }
-            steps {
+            steps{
                 sh '''
-                    chown -R node:node $PWD
                     test -f build/index.html
-                    npm test --unsafe-perm
+                    npm test
                 '''
             }
         }
 
-        stage('E2E') {
+        stage('E2E'){
             agent {
                 docker {
                     image 'mcr.microsoft.com/playwright:v1.54.0-noble'
@@ -44,19 +43,18 @@ pipeline {
                     args '-u root:root'
                 }
             }
-            steps {
+            steps{
                 sh '''
                     npm install serve
-                    node_modules/.bin/serve -s build &
-                    sleep 10
-                    npx playwright test --reporter=html
+                    serve -s build
+                    npm plarwright test
                 '''
             }
         }
     }
-
-    post {
-        always {
+    post
+    {
+        always{
             junit 'test-results/junit.xml'
         }
     }
